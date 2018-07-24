@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <mongo:config name="Mongo_DB" database="CateringServices" host="10.188.200.60" connectionsPerHost="10" maxWaitTime="1000" socketTimeout="1000" doc:name="Mongo DB"/>
+    <db:oracle-config name="Oracle_Configuration" host="localhost" port="1521" instance="xe" user="SYSTEM" password="password" doc:name="Oracle Configuration"/>
+    <db:template-query name="Template_Query" doc:name="Template Query">
+        <db:parameterized-query><![CDATA[Select CITY from Address where COUNTRY ='India']]></db:parameterized-query>
+    </db:template-query>
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="9090" doc:name="HTTP Listener Configuration"/>
+    <flow name="databasemongotestingFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/v1" doc:name="HTTP"/>
+        <db:select config-ref="Oracle_Configuration" doc:name="Database">
+            <db:template-query-ref name="Template_Query"/>
+        </db:select>
+        <set-payload value="#[message.payload[0].CITY]" doc:name="Set Payload"/>
+    </flow>
+    <flow name="databasemongotestingFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/v2" allowedMethods="post" doc:name="HTTP"/>
+        <logger message="#[payload]" level="INFO" metadata:id="da14b2c7-f76b-4632-a12a-9376d07e737c" doc:name="Logger"/>
+        <dw:transform-message metadata:id="dae7b353-4cf7-423a-b76c-55bb58e3f889" doc:name="Transform Message">
+            <dw:input-payload doc:sample="sample_data\string.dwl" mimeType="application/java"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+		output: "true"
+	} when TestJson.username == "fsyed"
+otherwise
+{    output: "false"
+}
+]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload.output]" doc:name="Set Payload"/>
+    </flow>
+    <flow name="databasemongotestingFlow2">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/mel" allowedMethods="GET,POST" doc:name="HTTP"/>
+        <set-variable variableName="nameflowvar" value="SyedFarazAhmed" doc:name="Variable"/>
+        <set-session-variable variableName="namesessionvar" value="SyedSession" doc:name="Session Variable"/>
+        <logger message="#[flowVars.nameflowvar]" level="INFO" doc:name="Flow Variable Logger"/>
+        <logger message="#[sessionVars.namesessionvar]" level="INFO" doc:name="Session Variable Logger"/>
+    </flow>
+</mule>
