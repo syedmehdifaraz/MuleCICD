@@ -9,7 +9,7 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <!-- CXF is used heavily by Mule for web services -->
+        <!-- CXF is used heavily by Mule for web Services -->
         <AsyncLogger name="org.apache.cxf" level="WARN"/>
 
         <!-- Apache Commons tend to make a lot of noise which can clutter the log-->
