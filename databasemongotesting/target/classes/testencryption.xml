@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <flow name="encryptFlow1">
+        <file:inbound-endpoint path="D:\MuleSoft\Filepolling\Source" responseTimeout="10000" doc:name="File"/>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+		<base64-encoder-transformer encoding="utf8"/> 
+     <logger level="INFO" doc:name="Logger" message="#[message.payloadAs(java.lang.String)]"/>
+        <scatter-gather doc:name="Scatter-Gather">
+            <file:outbound-endpoint path="D:\MuleSoft\Filepolling\Encoded_Copy" responseTimeout="10000" doc:name="File"/>
+            <file:outbound-endpoint path="D:\MuleSoft\Filepolling\Encoded" responseTimeout="10000" doc:name="File"/>
+        </scatter-gather>
+
+ </flow> 
+ <flow name="decryptFlow1"> 
+ <file:inbound-endpoint responseTimeout="10000" doc:name="File" path="D:\MuleSoft\Filepolling\Encoded"/> 
+ <logger level="INFO" doc:name="Logger" message="#[message.payloadAs(java.lang.String)]"/> 
+ <base64-decoder-transformer encoding="utf8"/> 
+ <logger level="INFO" doc:name="Logger" message="#[message.payloadAs(java.lang.String)]"/> 
+ <file:outbound-endpoint path="D:\MuleSoft\Filepolling\Decoded" responseTimeout="10000" doc:name="File"/> 
+ </flow> 
+</mule>

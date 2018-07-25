@@ -12,5 +12,8 @@
 	<classpathentry exported="true" kind="con" path="MULE_RUNTIME/org.mule.tooling.server.3.8.1.ee"/>
 	<classpathentry kind="src" path="src/test/munit"/>
 	<classpathentry kind="lib" path="src/main/app/lib/ojdbc6-12.1.0.2.0.jar"/>
+	<classpathentry kind="lib" path="C:/SoftwareAG/UniversalMessaging/lib/nAdminAPI.jar"/>
+	<classpathentry kind="lib" path="C:/SoftwareAG/UniversalMessaging/lib/nClient.jar"/>
+	<classpathentry kind="lib" path="C:/SoftwareAG/UniversalMessaging/lib/nJMS.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
