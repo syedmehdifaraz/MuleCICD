@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
     <db:template-query name="Template_Query" doc:name="Template Query">
         <db:parameterized-query><![CDATA[Select CITY from Address where COUNTRY ='India']]></db:parameterized-query>
     </db:template-query>
-    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="9090" doc:name="HTTP Listener Configuration"/>
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="9902" doc:name="HTTP Listener Configuration"/>
     <flow name="databasemongotestingFlow">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/v1" doc:name="HTTP"/>
         <db:select config-ref="Oracle_Configuration" doc:name="Database">
