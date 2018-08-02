@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="HTTP_Liste123" host="localhost" port="12345" doc:name="HTTP Listener Configuration"/>
+    <flow name="mobilisetaskFlow">
+        <http:listener config-ref="HTTP_Liste123" path="/Mobile" allowedMethods="Post" doc:name="HTTP">
+            <http:response-builder statusCode="999" reasonPhrase="Testing"/>
+        </http:listener>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <foreach collection="#[json:MoonLanding]" doc:name="For Each">
+            <set-variable variableName="flowTerrain" value="#[json:Terrain]" doc:name="Variable"/>
+            <set-variable variableName="flowWind" value="#[json:Wind]" doc:name="Variable"/>
+            <logger message="#[flowVars.flowTerrain] -------- #[flowVars.flowWind]" level="INFO" doc:name="Logger"/>
+            <choice doc:name="Choice">
+                <when expression="(flowVars.flowTerrain == '3' &amp;&amp; (Integer.parseInt(flowVars.flowWind)) &lt;= 20)">
+                    <set-session-variable variableName="SessionResult" value="Terrain: #[json:Terrain]  &amp; Wind: #[json:Wind]" doc:name="Session Variable"/>
+                    <logger message="Terrain: #[json:Terrain]  &amp; Wind: #[json:Wind]" level="INFO" doc:name="Logger"/>
+                </when>
+                <otherwise>
+                    <logger message="Condition Not Satisfied  Terrain: #[json:Terrain]  &amp; Wind: #[json:Wind]" level="INFO" doc:name="Logger"/>
+                </otherwise>
+            </choice>
+        </foreach>
+        <set-payload value="#[sessionVars.SessionResult]" doc:name="Response (Set Payload)"/>
+    </flow>
+</mule>
