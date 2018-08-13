@@ -10,7 +10,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
-    <mongo:config name="Mongo_DB" database="CateringServices" host="10.188.200.60" connectionsPerHost="10" maxWaitTime="1000" socketTimeout="1000" doc:name="Mongo DB"/>
+    <mongo:config name="Mongo_DB" database="CateringServices" host="10.188.193.164" connectionsPerHost="10" maxWaitTime="1000" socketTimeout="1000" doc:name="Mongo DB" username="faraz"/>
     <db:oracle-config name="Oracle_Configuration" host="localhost" port="1521" instance="xe" user="SYSTEM" password="password" doc:name="Oracle Configuration"/>
     <db:template-query name="Template_Query" doc:name="Template Query">
         <db:parameterized-query><![CDATA[Select CITY from Address where COUNTRY ='India']]></db:parameterized-query>
