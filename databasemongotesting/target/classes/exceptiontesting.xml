@@ -14,7 +14,8 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <http:listener-config name="HTTP_Listener_2" host="0.0.0.0" port="8882" doc:name="HTTP Listener Configuration"/>
     <mongo:config name="Mongo_DB_1" database="CateringServices" doc:name="Mongo DB" username="suresh" host="hscsrv164"/>
     <flow name="TestuserRegistration">
-        <http:listener config-ref="HTTP_Listener_2" path="/adduser" allowedMethods="POST" doc:name="addUserRequest"/>
+        <http:listener config-ref="HTTP_Listener_2" path="/adduser"  doc:name="addUserRequest"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
         <set-variable variableName="userId" value="#[new java.util.Random().nextInt(10000)]" doc:name="generate userId" metadata:id="6f6cbd6d-0020-47e9-897f-60a4452b850f"/>
         <set-variable variableName="currentDate" value="#[new java.util.Date()]" doc:name="set datevalues"/>
         <dw:transform-message doc:name="prepare userjson" metadata:id="b0f2c502-e52b-4b85-9c31-4b15e4ca8bd8">

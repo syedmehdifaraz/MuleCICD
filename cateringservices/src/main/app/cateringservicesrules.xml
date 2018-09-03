@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:bpm="http://www.mulesoft.org/schema/mule/bpm"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/bpm http://www.mulesoft.org/schema/mule/bpm/current/mule-bpm.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+	<bpm:drools/>
+	
+	<spring:beans>
+		<spring:bean name="NoFactsBean" class="java.util.ArrayList" />
+	</spring:beans>
+	
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="MenuRules">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/cateringservices/getTodayMenu" allowedMethods="POST" doc:name="HTTP">
+            <http:response-builder>
+                <http:header headerName="Content-Type" value="application/json"/>
+            </http:response-builder>
+        </http:listener>
+        <object-to-string-transformer doc:name="Object to String"/>
+        <json:json-to-object-transformer returnClass="com.cateringservices.rules.menu" doc:name="JSON to Object" />
+        <bpm:rules rulesDefinition="dailyMenuRules.drl" initialFacts-ref="NoFactsBean" doc:name="BPMRules"  />
+        <set-payload value="#[payload.object]" doc:name="Set Payload"/>
+        <json:object-to-json-transformer doc:name="Object to JSON" metadata:id="cb125f74-188e-443b-9de0-139575a6dcab"/>
+        <set-payload value="#[json:itemName]+#[json:menuDay]" doc:name="Set Payload"/>
+        <component class="com.cateringservices.rules.splitStringToJson" doc:name="Java"/>
+    </flow>
+</mule>

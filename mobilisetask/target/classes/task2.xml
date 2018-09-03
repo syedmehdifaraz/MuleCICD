@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="HTTP_Listener_Conf2" host="localhost" port="1234" doc:name="HTTP Listener Configuration"/>
+    <flow name="mobilisetaskFlow2">
+        <http:listener config-ref="HTTP_Listener_Conf2" path="/Mobile2" allowedMethods="Post" doc:name="HTTP Incoming">
+            <http:response-builder statusCode="999" reasonPhrase="Testing"/>
+        </http:listener>
+        <json:json-to-object-transformer metadata:id="ce6f852d-d71b-444c-a801-a5053ea8dccf" doc:name="JSON to Object"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <scatter-gather doc:name="Scatter-Gather">
+            <foreach collection="#[json:Terrain]" doc:name="For Each">
+
+                <db:insert config-ref="MySQL_Configuration"  doc:name="Database">
+                    <db:dynamic-query><![CDATA[insert into terrain_data values(#[json:Terrain]);]]></db:dynamic-query>
+                </db:insert>
+            </foreach>
+                    
+            <foreach collection="#[json:Wind]" doc:name="For Each">
+                <db:insert config-ref="MySQL_Configuration"  doc:name="Database">
+                    <db:dynamic-query><![CDATA[insert into wind_data values(#[json:Wind]);]]></db:dynamic-query>
+                </db:insert>
+            </foreach>
+        </scatter-gather>
+
+        <logger message="#[payload] --- Insertion Successful" level="INFO" doc:name="Logger"/>
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:dynamic-query><![CDATA[select a.Terrain, b.Wind from Terrain_Data a, wind_data b;]]></db:dynamic-query>
+        </db:select>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="&quot;#[payload.Terrain]=='3'&amp;#[payload.wind]&lt;='20'&quot;">
+                <logger message="Successful" level="INFO" doc:name="Logger"/>
+            </when>
+            <otherwise>
+                <logger message="Failure." level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+
+        <set-payload value="#[payload]" doc:name="Response (Set Payload)"/>
+    </flow>
+</mule>

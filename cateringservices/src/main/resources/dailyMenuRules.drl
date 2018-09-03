@@ -1,0 +1,57 @@
+package com.cateringservices.rules;
+import org.mule.MessageExchangePattern;
+import com.cateringservices.rules.menu;
+global org.mule.module.bpm.MessageService mule;
+dialect "mvel"
+
+declare menu
+@role('event')
+end
+
+rule "Monday"
+lock-on-active when
+$menu: menu(menuDay == "Monday") then
+modify($menu) {
+setItemName("Veg Salad,2,4*Veg Soup,1,3*Veg Sandwich,3,4*Chicken Pasta,3,3")
+}
+end
+
+rule "Tuesday"
+lock-on-active when
+$menu: menu(menuDay == "Tuesday") then
+modify($menu) {
+setItemName("Tomato Soup,2,2*Meat Soup,3,4*Veg Salad,2,4*Chicken Salad,3,4")
+}
+end
+
+rule "Wednesday"
+lock-on-active when
+$menu: menu(menuDay == "Wednesday") then
+modify($menu) {
+setItemName("Veg Soup,1,3*Chicken Soup,2,3*Meat Salad,4,3*Meat Pasta,4,3")
+}
+end
+
+rule "Thursday"
+lock-on-active when
+$menu: menu(menuDay == "Thursday") then
+modify($menu) {
+setItemName("Chicken Soup,2,3*Chicken Sandwich,3,3*Chicken Pasta,3,3*Veg Sandwich,3,4")
+}
+end
+
+rule "Friday"
+lock-on-active when
+$menu: menu(menuDay == "Friday") then
+modify($menu) {
+setItemName("Fish Salad,4,4*Fish Fries,4,3*Chicken Sandwich,3,3*Veg Pasta,3,4")
+}
+end
+
+rule "Weekend"
+lock-on-active when
+$menu: menu(menuDay == "Saturday" || menuDay == "Sunday") then
+modify($menu) {
+setItemName("Veg Soup,1,3*Chicken Soup,3,4*Chicken Sandwich,3,3*Veg Pasta,3,4")
+}
+end

@@ -1,0 +1,241 @@
+<mule xmlns:context="http://www.springframework.org/schema/context" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:hl7-edi="http://www.mulesoft.org/schema/mule/hl7-edi"
+	xmlns:hl7-transformer="http://www.mulesoft.org/schema/mule/hl7-transformer"
+	xmlns:hl7="http://www.mulesoft.org/schema/mule/hl7" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/hl7 http://www.mulesoft.org/schema/mule/hl7/current/mule-hl7.xsd
+http://www.mulesoft.org/schema/mule/hl7-edi http://www.mulesoft.org/schema/mule/hl7-edi/current/mule-hl7-edi.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
+	<hl7-edi:config name="HL7_EDI__Configuration" doc:name="HL7 EDI: Configuration">
+		<hl7-edi:schemas>
+			<hl7-edi:schema>/hl7/v2_3_1/ADT_A01.esl</hl7-edi:schema>
+			<hl7-edi:schema>/hl7/v2_3_1/ADT_A02.esl</hl7-edi:schema>
+		</hl7-edi:schemas>
+	</hl7-edi:config>
+	<http:request-config name="HTTP_Request_Configuration"
+		host="${system-api.host}" port="${system-api.port}" basePath="${system-api.basePath}"
+		doc:name="HTTP Request Configuration">
+		<http:raml-api-configuration
+			location="healthcare-fhir-system-api/healthcare-system-api.raml" />
+	</http:request-config>
+    <context:property-placeholder location="mule.${mule.env}.properties, common.properties"/>
+	
+	<flow name="hl7MllpTransport">
+		<hl7:inbound-endpoint host="${hl7.host}"
+			port="${hl7.port}" responseTimeout="10000" exchange-pattern="request-response"
+			doc:name="HL7 MLLP" />
+		<hl7-edi:read config-ref="HL7_EDI__Configuration"
+			doc:name="HL7 EDI" />
+        <tracking:custom-event event-name="Retrieved HL7 message" doc:name="Custom Business Event">
+            <tracking:meta-data key="Hl7 message" value="#[payload]"/>
+        </tracking:custom-event>
+		<set-variable variableName="msg" value="#[payload]"
+			doc:name="set var msg" />
+		<async doc:name="Async">
+			<choice doc:name="Check msg type">
+				<when expression="#[payload.MSH.'MSH-09-03'=='ADT_A01']">
+					<flow-ref name="ADT_A01" doc:name="ADT_A01" />
+				</when>
+				<when expression="#[payload.MSH.'MSH-09-03'=='ADT_A02']">
+					<flow-ref name="ADT_A02" doc:name="ADT_A02" />
+				</when>
+				<otherwise>
+					<logger
+						message="HL7 message not supported : #[payload.MSH.&quot;MSH-09-03&quot;]"
+						level="INFO" doc:name="HL7 message not supported" />
+				</otherwise>
+			</choice>
+		</async>
+		<dw:transform-message doc:name="Transform to ACK Message">
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	Name: "ACK",
+	MSH: flowVars.msg.ACK."01_MSH",
+	Id: "ACK",
+	Data: {
+		ACK: flowVars.msg.ACK
+			}
+}]]></dw:set-payload>
+		</dw:transform-message>
+		<hl7-edi:write config-ref="HL7_EDI__Configuration"
+			messageStructure="OutMessage" doc:name="HL7 EDI" />
+	</flow>
+	<sub-flow name="ADT_A01">
+		<dw:transform-message doc:name="HL7 Map to FHIR Patient JSON">
+			<dw:input-payload doc:sample="ADT_A01.dwl" />
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+//%namespace ns0 urn:hl7-org:v2xml
+// https://www.hl7.org/fhir/v3/MaritalStatus/index.html
+// https://phinvads.cdc.gov/vads/ViewValueSet.action?id=46D34BBC-617F-DD11-B38D-00188B398520
+%var HL7toFHIRmaritalStatus = {
+	"N" : "A",
+	"C" : "",
+	"D" : "D",
+	"P" : "T",
+	"I" : "",
+	"E" : "L",
+	"G" : "",
+	"M" : "M",
+	"O" : "",
+	"R" : "",
+	"A" : "",
+	"S" : "S",
+	"U" : "",
+	"B" : "",
+	"T" : ""
+}
+
+%var FHIRmaritalStatusDesc = {
+	"A" :	"Annulled",
+	"D" :	"Divorced",
+	"I" :	"Interlocutory",
+	"L" :	"Legally Separated",
+	"M" :	"Married",
+	"P" :	"Polygamous",
+	"S" :	"Never Married",
+	"T" :	"Domestic partner",
+	"W" :	"Widowed"
+}
+---
+using (dob = payload.Data.ADT_A01."03_PID".PID-07-01)
+{
+	"resourceType": "Patient",
+	"identifier" : [
+		{
+			value:payload.Data.ADT_A01."03_PID".PID-03[0].PID-03-01
+		}
+	],
+	"name": payload.Data.ADT_A01."03_PID".PID-05 map {
+		"use": "official",
+		"family": [
+	      $.PID-05-01-01
+	    ],
+		"given": [
+	      $.PID-05-02,
+	      ($.PID-05-03) when $.PID-05-03 != null
+	    ],
+		"prefix": [
+	      ($.PID-05-05) when $.PID-05-05 != null
+	    ],
+		"suffix": [
+	      ($.PID-05-04) when $.PID-05-04 != null
+	    ]
+	},
+	"telecom": payload.Data.ADT_A01."03_PID".PID-13 map 
+	    {
+			"system": "phone",
+			"value": $.PID-13-01,
+			"use": "home"
+		},
+	"gender": "male" when (payload.Data.ADT_A01."03_PID".PID-08 == "M") otherwise "female",
+	("birthDate": [dob[0..3], dob[4..5], dob[6..7]] joinBy '-') when (dob != null and (dob matches /(\d{8,14})/) ), 
+	"maritalStatus" : 
+	{
+		coding: [ 
+			using (fhirMaritalStatusCode = HL7toFHIRmaritalStatus[(payload.Data.ADT_A01."03_PID".PID-16-01)])
+			{
+				"system"  : "http://hl7.org/fhir/v3/MaritalStatus",
+				"code"    : fhirMaritalStatusCode,
+				"display" : FHIRmaritalStatusDesc[fhirMaritalStatusCode]
+			}
+		]
+	},
+	"address": payload.Data.ADT_A01."03_PID".PID-11 map
+    {
+		"line": [$.PID-11-01],
+		"city": $.PID-11-03,
+		"state": $.PID-11-04,
+		"postalCode": ($.PID-11-05) when $.PID-11-05 != null otherwise "",
+		"country": $.PID-11-06
+	}
+}]]></dw:set-payload>
+		</dw:transform-message>
+        <tracking:custom-event event-name="Transformed HL7 to FHIR" doc:name="Custom Business Event">
+            <tracking:meta-data key="FHIR Json" value="#[payload]"/>
+        </tracking:custom-event>
+
+
+		<http:request config-ref="HTTP_Request_Configuration"
+			path="/Patient" method="POST" doc:name="Call (post Patient) SFHC2FHIR System API">
+
+		</http:request>
+		<logger message="Candidate Patient created" level="INFO"
+			doc:name="Log success" />
+	</sub-flow>
+	<sub-flow name="ADT_A02">
+		<dw:transform-message doc:name="HL7 Map to FHIR Observation">
+			<dw:input-payload doc:sample="ADT_A02.dwl" />
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload.Data."ADT_A02"."18_OBX" map
+using (date = $.OBX-14-01 default null)
+{
+    "resourceType": "Observation",
+      "subject": {
+        "reference": "patients/" ++ payload.Data."ADT_A02"."03_PID".PID-03[0].PID-03-01,
+        "display" : payload.Data."ADT_A02"."03_PID".PID-05[0].PID-05-02 ++ " " ++ payload.Data."ADT_A02"."03_PID".PID-05[0].PID-05-01-01
+      },
+      "code": {
+        "coding": [
+          {
+            ("system": $.OBX-03-03) when $.OBX-03-03 != null,
+            "code": $.OBX-03-01,
+            "display": $.OBX-03-02
+          }
+        ]
+      },
+      ("effectiveDateTime": [date[0..3], date[4..5], date[6..7]] joinBy '-')
+                        when (date != null and (date matches /(\d{8,14})/)),
+      "valueQuantity": {
+          "value": $.OBX-05[0].OBX-05,
+          "unit": $.OBX-06-01
+      },
+      (referenceRange: [
+            {
+            "low": {
+              "value": ($.OBX-07 splitBy '-')[0],
+              "unit": $.OBX-06-01
+            },
+            "high": {
+              "value": ($.OBX-07 splitBy '-')[1],
+              "unit": $.OBX-06-01
+            }
+          }
+      ]) when $.OBX-07 != null,
+      "status" : "registered"
+      
+}
+]]></dw:set-payload>
+		</dw:transform-message>
+		<foreach doc:name="For Each">
+			<json:object-to-json-transformer
+				doc:name="Object to JSON" />
+            <tracking:custom-event event-name="Transformed HL7 to FHIR" doc:name="Custom Business Event">
+                <tracking:meta-data key="FHIR Json" value="#[payload]"/>
+            </tracking:custom-event>
+			<http:request config-ref="HTTP_Request_Configuration"
+				path="/Observation" method="POST"
+				doc:name="Call (post Observation) SFHC2FHIR System API" />
+		</foreach>
+		<logger message="Observation created" level="INFO" doc:name="Log success" />
+
+
+	</sub-flow>
+
+
+</mule>

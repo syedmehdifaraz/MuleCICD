@@ -1,0 +1,36 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Terrain"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "model": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "Terrain"
+            },
+            "isArray": false,
+            "dataType": "LIST",
+            "metaDataModelPropertiesManager": {
+                "properties": []
+            }
+        },
+        "flowVariables": {
+            "Output": {
+                "model": {
+                    "connectorName": "#_custom_mule_metadata_type_#",
+                    "typeId": "Output"
+                },
+                "isArray": false,
+                "dataType": "LIST",
+                "metaDataModelPropertiesManager": {
+                    "properties": []
+                }
+            }
+        }
+    },
+    "id": "339eb0b0-2af7-40b1-b453-f9a629541c9f",
+    "version": "5.2.0.0"
+}

@@ -1,0 +1,29 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Input"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Output"
+        },
+        "flowVariables": {
+            "Output": {
+                "model": {
+                    "connectorName": "#_custom_mule_metadata_type_#",
+                    "typeId": "Wind"
+                },
+                "isArray": false,
+                "dataType": "LIST",
+                "metaDataModelPropertiesManager": {
+                    "properties": []
+                }
+            }
+        }
+    },
+    "id": "7ef2e8aa-e818-4a1d-ba87-4ee3236d7e2c",
+    "version": "5.2.0.0"
+}

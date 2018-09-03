@@ -1,0 +1,58 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Input"
+        },
+        "sessionVariables": {
+            "TerrainSession": {}
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Output"
+        },
+        "flowVariables": {
+            "OutputTerrain": {
+                "model": {
+                    "connectorName": "#_custom_mule_metadata_type_#",
+                    "typeId": "Output"
+                },
+                "isArray": false,
+                "dataType": "LIST",
+                "metaDataModelPropertiesManager": {
+                    "properties": []
+                }
+            },
+            "Output": {
+                "model": {
+                    "connectorName": "#_custom_mule_metadata_type_#",
+                    "typeId": "Terrain"
+                },
+                "isArray": false,
+                "dataType": "LIST",
+                "metaDataModelPropertiesManager": {
+                    "properties": []
+                }
+            },
+            "VariableRecord": {
+                "model": {
+                    "connectorName": "#_custom_mule_metadata_type_#",
+                    "typeId": "Terrain"
+                },
+                "isArray": false,
+                "dataType": "LIST",
+                "metaDataModelPropertiesManager": {
+                    "properties": []
+                }
+            },
+            "OutTerrain": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "Input"
+            }
+        }
+    },
+    "id": "93400c9b-7fca-4092-aafa-9780bd4d98ff",
+    "version": "5.2.0.0"
+}

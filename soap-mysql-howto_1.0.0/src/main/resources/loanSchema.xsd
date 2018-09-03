@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	 xmlns="http://www.mulesoft.com/schemas/Mule/Schema.xsd"
+	 targetNamespace="http://www.mulesoft.com/schemas/Mule/Schema.xsd"
+	 elementFormDefault="qualified"
+	 attributeFormDefault="unqualified">
+	<xs:element name="getLoanRequest">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="loanId" type="xs:string" minOccurs="0"/>
+				<xs:element name="customerId" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="getLoanResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="loanList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="loan" minOccurs="0" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="loanId" type="xs:string"/>
+										<xs:element name="customerId" type="xs:string"/>
+										<xs:element name="loanType" type="xs:string"/>
+										<xs:element name="loanAmount" type="xs:string"/>
+										<xs:element name="monthlyPayment" type="xs:string"/>
+										<xs:element name="interestRate" type="xs:string"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

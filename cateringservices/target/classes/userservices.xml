@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration2" host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration"/>
+    <mongo:config name="Mongo_DB" database="CateringServices" doc:name="Mongo DB" username="suresh" host="hscsrv164"/>
+    <flow name="userRegistration">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/adduser" allowedMethods="POST" doc:name="addUserRequest"/>
+        <set-variable variableName="userId" value="#[new java.util.Random().nextInt(10000)]" doc:name="generate userId" metadata:id="6f6cbd6d-0020-47e9-897f-60a4452b850f"/>
+        <set-variable variableName="currentDate" value="#[new java.util.Date()]" doc:name="set datevalues"/>
+        <dw:transform-message doc:name="prepare userjson" metadata:id="b0f2c502-e52b-4b85-9c31-4b15e4ca8bd8">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:input-variable mimeType="application/java" variableName="userId"/>
+            <dw:input-variable mimeType="application/java" variableName="currentDate"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	userName: payload.userName,
+	password: payload.password,
+	firstName: payload.firstName,
+	lastName: payload.lastName,
+	email: payload.email,
+	phone: payload.phone,
+	status: "active",
+	role: "user",
+	userId: flowVars.userId as :number,
+	createDate: flowVars.currentDate as :string,
+	lastModifiedDate: flowVars.currentDate as :string
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <object-to-string-transformer doc:name="convert json to string"/>
+        <mongo:insert-object config-ref="Mongo_DB" collection="users" doc:name="insert into Mongo" database="CateringServices"  username="suresh"/>
+        <dw:transform-message doc:name="set response" metadata:id="973bb967-c45a-432f-8d55-2ab04e78ac71">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "success",
+	statusMessage: "user registered successfully"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+            <catch-exception-strategy when="#[exception.causeMatches('com.mongodb.MongoException.DuplicateKey')]" doc:name="Catch Exception Strategy">
+                <set-property propertyName="http.status" value="409" doc:name="set http status code"/>
+                <set-variable variableName="errorVariable" value="#[exception.getCause().toString().split('DuplicateKey:')[1]]" doc:name="retrieve error from exception"/>
+                <dw:transform-message doc:name="prepare error response" metadata:id="3d4b19bd-8b4c-4c1c-a9e8-c5aea7060556">
+                    <dw:input-variable mimeType="application/json" variableName="errorVariable"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: flowVars.errorVariable.err
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" mimeType="application/json" doc:name="send Error Response"/>
+            </catch-exception-strategy>
+            <catch-exception-strategy doc:name="Catch Exception Strategy">
+                <set-property propertyName="http.status" value="500" doc:name="set http status code"/>
+                <dw:transform-message doc:name="prepare error response" metadata:id="3d4b19bd-8b4c-4c1c-a9e8-c5aea7060556">
+                    <dw:input-variable mimeType="application/json" variableName="errorVariable"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "Exception occurred while processing request"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" mimeType="application/json" doc:name="send Error Response"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+    <flow name="userInfo">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/user" allowedMethods="POST" doc:name="search User"/>
+        <object-to-string-transformer mimeType="application/json" doc:name="transform to string"/>
+        <mongo:find-one-object config-ref="Mongo_DB" collection="users" doc:name="find user"/>
+        <mongo:dbobject-to-json doc:name="Mongo DB"/>
+        <dw:transform-message doc:name="map Only required fields" metadata:id="fe501dc4-6951-49f4-b6dc-79d4ab088673">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	userName: payload.userName,
+	firstName: payload.firstName,
+	lastName: payload.lastName,
+	email: payload.email,
+	phone: payload.phone,
+	status: payload.status,
+	role: payload.role
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" mimeType="application/json" doc:name="send Response"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-property propertyName="http.status" value="404" doc:name="set status code"/>
+            <dw:transform-message doc:name="set failure response" metadata:id="7324ad96-d2d9-4204-b88f-e4864a6f6994">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "Invalid Credentials or User does not exists - "
+++ payload.userName
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <set-payload value="#[payload]" mimeType="application/json" doc:name="send Failure Response"/>
+        </catch-exception-strategy>
+    </flow>
+    <flow name="validateUser">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/validateUser" allowedMethods="POST" doc:name="HTTP"/>
+        <object-to-string-transformer mimeType="application/json" doc:name="Object to String"/>
+        <mongo:find-one-object config-ref="Mongo_DB" collection="users" doc:name="Mongo DB"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="3356263d-95da-485f-93fd-b829ab0f9de5">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "invalid"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <dw:transform-message doc:name="Transform Message" metadata:id="f488e500-9fe4-45ec-bb20-59cc6840d118">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "valid"
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <set-payload value="#[payload]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+    <flow name="addUserPwdQuestions">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/addPwdQuestions" allowedMethods="POST" doc:name="HTTP" metadata:id="f7eb3375-15a1-4dad-9ad4-1600e3660dd7"/>
+        <set-variable variableName="todayDate" value="#[new java.util.Date()]" doc:name="set datetimevalues"/>
+        <dw:transform-message doc:name="prepare json" metadata:id="c077f31e-0c27-4d63-9d98-60481634d7ca">
+            <dw:input-variable mimeType="application/java" variableName="todayDate"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	userName: payload.userName,
+	question1: payload.question1,
+	answer1: payload.answer1,
+	question2: payload.question2,
+	answer2: payload.answer2,
+	createDate: flowVars.todayDate as :string,
+	lastModifiedDate: flowVars.todayDate as :string
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <object-to-string-transformer doc:name="convert to String"/>
+        <mongo:insert-object config-ref="Mongo_DB" collection="pwdquestions" doc:name="insert user pwdquestions"/>
+        <dw:transform-message doc:name="set response status" metadata:id="69c78b6b-0fd5-48ed-8435-54ef038c96b7">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "success",
+	statusMessage: "user pwd questions added successfully!!"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" mimeType="application/json" doc:name="send success response"/>
+        <choice-exception-strategy doc:name="Exception Handling">
+            <catch-exception-strategy when="#[exception.causeMatches('com.mongodb.MongoException.DuplicateKey')]" doc:name="Catch Mongo Duplicate Key Exception">
+                <set-property propertyName="http.status" value="409" doc:name="set http status code"/>
+                <set-variable variableName="errorVariable" value="#[exception.getCause().toString().split('DuplicateKey:')[1]]" doc:name="retrieve error from exception"/>
+                <dw:transform-message doc:name="prepare error response" metadata:id="3d4b19bd-8b4c-4c1c-a9e8-c5aea7060556">
+                    <dw:input-variable mimeType="application/json" variableName="errorVariable"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: flowVars.errorVariable.err
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" mimeType="application/json" doc:name="send Error Response"/>
+            </catch-exception-strategy>
+            <catch-exception-strategy doc:name="Catch Default Exception">
+                <set-property propertyName="http.status" value="500" doc:name="set http status code"/>
+                <dw:transform-message doc:name="prepare error response" metadata:id="3d4b19bd-8b4c-4c1c-a9e8-c5aea7060556">
+                    <dw:input-variable mimeType="application/json" variableName="errorVariable"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "Exception occurred while processing request"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" mimeType="application/json" doc:name="send Error Response"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+    <flow name="addUserFeedback">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/addUserFeedback" allowedMethods="POST" doc:name="receiveUserFeedback" metadata:id="f7eb3375-15a1-4dad-9ad4-1600e3660dd7"/>
+        <set-variable variableName="todayDate" value="#[new java.util.Date()]" doc:name="set datetimevalues"/>
+        <dw:transform-message doc:name="prepare json" metadata:id="c077f31e-0c27-4d63-9d98-60481634d7ca">
+            <dw:input-variable mimeType="application/java" variableName="todayDate"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	userName: payload.userName,
+	email: payload.email,
+	subject: payload.subject,
+	message: payload.message,
+	createDate: flowVars.todayDate as :string
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <object-to-string-transformer doc:name="convert to String"/>
+        <mongo:insert-object config-ref="Mongo_DB" collection="userfeedback" doc:name="insert user feedback"/>
+        <dw:transform-message doc:name="set response" metadata:id="69c78b6b-0fd5-48ed-8435-54ef038c96b7">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "success",
+	statusMessage: "user feedback submitted successfully!!"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" mimeType="application/json" doc:name="send response"/>
+        <choice-exception-strategy doc:name="Exception Handling">
+            <catch-exception-strategy when="#[exception.causeMatches('com.mongodb.MongoException.DuplicateKey')]" doc:name="Catch Mongo Duplicate Key Exception">
+                <set-property propertyName="http.status" value="409" doc:name="set http status code"/>
+                <set-variable variableName="errorVariable" value="#[exception.getCause().toString().split('DuplicateKey:')[1]]" doc:name="retrieve error from exception"/>
+                <dw:transform-message doc:name="prepare error response" metadata:id="3d4b19bd-8b4c-4c1c-a9e8-c5aea7060556">
+                    <dw:input-variable mimeType="application/json" variableName="errorVariable"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: flowVars.errorVariable.err
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" mimeType="application/json" doc:name="send Error Response"/>
+            </catch-exception-strategy>
+            <catch-exception-strategy doc:name="Catch Default Exception">
+                <set-property propertyName="http.status" value="500" doc:name="set http status code"/>
+                <dw:transform-message doc:name="prepare error response" metadata:id="3d4b19bd-8b4c-4c1c-a9e8-c5aea7060556">
+                    <dw:input-variable mimeType="application/json" variableName="errorVariable"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "Exception occurred while processing request"
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-payload value="#[payload]" mimeType="application/json" doc:name="send Error Response"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+</mule>

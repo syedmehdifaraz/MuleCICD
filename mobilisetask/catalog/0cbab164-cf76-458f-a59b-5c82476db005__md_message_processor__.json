@@ -1,0 +1,18 @@
+{
+    "inputMessageMetadata": {
+        "sessionVariables": {
+            "SessionOutput": {}
+        }
+    },
+    "outputMessageMetadata": {
+        "flowVariables": {
+            "OutputResult": {},
+            "OutputList": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "Output"
+            }
+        }
+    },
+    "id": "0cbab164-cf76-458f-a59b-5c82476db005",
+    "version": "5.2.0.0"
+}

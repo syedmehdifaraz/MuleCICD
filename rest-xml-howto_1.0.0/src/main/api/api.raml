@@ -1,0 +1,17 @@
+#%RAML 0.8
+title: loan_XML_REST_API
+version: 1.0
+baseUri: http://server/api/{version}
+/customer:
+  displayName: Fetch Customer Details
+  post:
+    description: fetch customer details
+    body:
+      application/xml:
+        schema: !include customer_inquiry_request_schema.xsd
+    responses:
+      200:
+        body:
+          application/xml:
+            schema: !include customer_inquiry_response_schema.xsd
+          

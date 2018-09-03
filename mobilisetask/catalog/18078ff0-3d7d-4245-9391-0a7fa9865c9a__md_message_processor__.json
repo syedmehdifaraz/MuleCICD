@@ -1,0 +1,19 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Terrain"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {},
+        "flowVariables": {
+            "Output": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "Output"
+            }
+        }
+    },
+    "id": "18078ff0-3d7d-4245-9391-0a7fa9865c9a",
+    "version": "5.2.0.0"
+}

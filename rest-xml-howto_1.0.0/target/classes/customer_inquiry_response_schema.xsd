@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.example.org/customer_inquiry_response_schema" xmlns:tns="http://www.example.org/customer_inquiry_response_schema" elementFormDefault="qualified">
+
+    <element name="customerInquiryResponse" type="tns:responseType"></element>
+    
+    <complexType name="responseType">
+    	<sequence>
+    		<element name="customer" type="tns:customerType" maxOccurs="unbounded" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="customerType">
+    	<sequence>
+    		<element name="customerId" type="string"></element>
+    		<element name="firstName" type="string"></element>
+    		<element name="lastName" type="string"></element>
+    		<element name="email" type="string" maxOccurs="1" minOccurs="0"></element>
+    		<element name="phNumber" type="string"></element>
+    	</sequence>
+    </complexType>
+</schema>

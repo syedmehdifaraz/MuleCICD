@@ -1,0 +1,11 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "List_Map__To_XML",
+            "typeId": "getLoanResponse"
+        }
+    },
+    "outputMessageMetadata": {},
+    "id": "9db6e51d-18b7-47f5-9d37-3086e82ac384",
+    "version": "5.2.0.0"
+}

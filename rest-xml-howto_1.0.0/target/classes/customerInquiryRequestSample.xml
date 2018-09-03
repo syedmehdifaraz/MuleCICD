@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns0:customerInquiryRequest xmlns:ns0="http://www.example.org/customer_inquiry_request_schema">
+  <ns0:customer>
+    <ns0:customerId>1</ns0:customerId>
+  </ns0:customer>
+</ns0:customerInquiryRequest>
