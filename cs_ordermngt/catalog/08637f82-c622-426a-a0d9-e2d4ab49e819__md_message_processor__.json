@@ -1,0 +1,11 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "locationSites"
+        }
+    },
+    "id": "08637f82-c622-426a-a0d9-e2d4ab49e819",
+    "version": "5.2.0.0"
+}

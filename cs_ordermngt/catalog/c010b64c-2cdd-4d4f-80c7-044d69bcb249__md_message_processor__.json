@@ -1,0 +1,18 @@
+{
+    "inputMessageMetadata": {
+        "flowVariables": {
+            "currentDate": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "dateTime"
+            }
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "dateTime"
+        }
+    },
+    "id": "c010b64c-2cdd-4d4f-80c7-044d69bcb249",
+    "version": "5.2.0.0"
+}

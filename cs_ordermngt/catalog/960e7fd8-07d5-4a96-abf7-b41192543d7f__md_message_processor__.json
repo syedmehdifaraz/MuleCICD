@@ -1,0 +1,10 @@
+{
+    "inputMessageMetadata": {
+        "sessionVariables": {
+            "orderItems": {}
+        }
+    },
+    "outputMessageMetadata": {},
+    "id": "960e7fd8-07d5-4a96-abf7-b41192543d7f",
+    "version": "5.2.0.0"
+}

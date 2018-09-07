@@ -1,0 +1,10 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "flowVariables": {
+            "employCount": {}
+        }
+    },
+    "id": "2e420172-3d1b-4c11-9e7f-74ccc4e6b92c",
+    "version": "5.2.0.0"
+}

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="FoodPlanListener" host="0.0.0.0" port="8089" doc:name="HTTP Listener Configuration"/>
+    <http:request-config name="DemoServerCall" host="hscsrv164" port="8083" doc:name="HTTP Request Configuration"/>
+    <mongo:config name="DemoMDB" username="suresh" database="ordermanagement" host="hscsrv164" doc:name="Mongo DB"/>
+    <mongo:config name="localDBOrderMngt" username="suresh" database="ordermanagement" doc:name="Mongo DB"/>
+    <mongo:config name="DemoDBUserMngt" username="suresh" database="usermanagement" host="hscsrv164" doc:name="Mongo DB"/>
+    <mongo:config name="LocalDBUserMngt" username="suresh" database="usermanagement" doc:name="Mongo DB"/>
+    <flow name="dumpOrderSummary">
+        <http:listener config-ref="FoodPlanListener" path="/orderSummary" allowedMethods="GET" doc:name="/foodPlan"/>
+        <mongo:find-objects-using-query-map config-ref="DemoMDB" collection="orderSummary" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="For Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="localDBOrderMngt" collection="orderSummary" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+
+    </flow>
+    <flow name="cs_foodplanFlow1">
+        <http:listener config-ref="FoodPlanListener" path="/getDump" allowedMethods="GET" doc:name="HTTP"/>
+        <set-variable variableName="commandValue" value="{aggregate:&quot;orderDetails&quot;,pipeline:[{$match: {itemName: &quot;Chicken Pasta&quot;, orderDay: &quot;Thursday&quot;}}, {$group: {total: {$sum: &quot;$itemPrice&quot;}}}],cursor: { }}" mimeType="application/json" doc:name="Variable"/>
+        <logger message="#[flowVars.commandValue]" level="INFO" doc:name="Logger"/>
+        <mongo:execute-command config-ref="DemoMDB" commandName="eval" commandValue="db.runCommand(#[flowVars.commandValue])" doc:name="Mongo DB"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="dumpOrderDetails">
+        <http:listener config-ref="FoodPlanListener" path="/orderDetails" allowedMethods="GET" doc:name="/dumpOrderDetails"/>
+        <mongo:find-objects-using-query-map config-ref="DemoMDB" collection="orderDetails" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="for Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="localDBOrderMngt" collection="orderDetails" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+    </flow>
+    <flow name="dumpUserSessions">
+        <http:listener config-ref="FoodPlanListener" path="/userSessions" allowedMethods="GET" doc:name="dumpUserSessions"/>
+        <mongo:find-objects-using-query-map config-ref="DemoDBUserMngt" collection="usersessions" doc:name="getusersessionsdata"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="for Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="LocalDBUserMngt" collection="usersessions" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+    </flow>
+</mule>

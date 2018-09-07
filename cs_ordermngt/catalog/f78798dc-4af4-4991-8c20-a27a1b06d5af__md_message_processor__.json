@@ -1,0 +1,32 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "orderreq"
+        }
+    },
+    "outputMessageMetadata": {
+        "flowVariables": {
+            "orderSummary": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "ordersummary"
+            },
+            "orderItems": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "orderitems"
+            }
+        },
+        "sessionVariables": {
+            "orderSummary": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "ordersummary"
+            },
+            "orderItems": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "orderitems"
+            }
+        }
+    },
+    "id": "f78798dc-4af4-4991-8c20-a27a1b06d5af",
+    "version": "5.2.0.0"
+}

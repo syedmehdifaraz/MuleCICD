@@ -1,0 +1,10 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "flowVariables": {
+            "locationName": {}
+        }
+    },
+    "id": "fc9eb06d-8fff-45bf-9e72-0ae573542226",
+    "version": "5.2.0.0"
+}

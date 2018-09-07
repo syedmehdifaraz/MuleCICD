@@ -1,0 +1,13 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "sessionVariables": {
+            "itemDetails": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "orderitems"
+            }
+        }
+    },
+    "id": "3b5c6792-f0cc-47b5-ab3c-b946fc91a34c",
+    "version": "5.2.0.0"
+}

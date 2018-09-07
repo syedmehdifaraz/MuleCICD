@@ -1,0 +1,19 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "dbConstMenuResponse"
+        },
+        "flowVariables": {
+            "siteResponse": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "menuResponse"
+            }
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {}
+    },
+    "id": "c3b3afa1-48e5-437d-b9f5-0513783c9856",
+    "version": "5.2.0.0"
+}
