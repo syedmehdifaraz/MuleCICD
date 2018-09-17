@@ -12,8 +12,8 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="FoodPlanListener" host="0.0.0.0" port="8089" doc:name="HTTP Listener Configuration"/>
     <http:request-config name="DemoServerCall" host="hscsrv164" port="8083" doc:name="HTTP Request Configuration"/>
-    <mongo:config name="DemoMDB" username="suresh" database="ordermanagement" host="hscsrv164" doc:name="Mongo DB"/>
-    <mongo:config name="localDBOrderMngt"  database="ordermanagement" doc:name="Mongo DB" username="faraz"/>
+    <mongo:config name="DemoMDB" username="suresh" database="foodplanmanagement" host="hscsrv164" doc:name="Mongo DB"/>
+    <mongo:config name="localDBOrderMngt"  database="foodplanmanagement" doc:name="Mongo DB" username="faraz"/>
     <mongo:config name="DemoDBUserMngt" username="suresh" database="usermanagement" host="hscsrv164" doc:name="Mongo DB"/>
     <mongo:config name="LocalDBUserMngt"  database="usermanagement" doc:name="Mongo DB" username="faraz"/>
     <flow name="dumpOrderSummary">
@@ -87,6 +87,58 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
             <mongo:json-to-dbobject doc:name="Mongo DB"/>
             <mongo:insert-object config-ref="LocalDBUserMngt" collection="usersessions" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+    </flow>
+    <flow name="InventoryStock">
+        <http:listener config-ref="FoodPlanListener" path="/InventoryStock" allowedMethods="GET" doc:name="/InventoryStock"/>
+        <mongo:find-objects-using-query-map config-ref="DemoMDB" collection="inventorystock" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="For Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="localDBOrderMngt" collection="inventorystock" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+    </flow>
+    <flow name="InventoryHistory">
+        <http:listener config-ref="FoodPlanListener" path="/InventoryHistory" allowedMethods="GET" doc:name="/InventoryHistory"/>
+        <mongo:find-objects-using-query-map config-ref="DemoMDB" collection="inventoryhistory" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="For Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="localDBOrderMngt" collection="inventoryhistory" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+    </flow>
+    <flow name="ItemIngredients">
+        <http:listener config-ref="FoodPlanListener" path="/ItemIngredients" allowedMethods="GET" doc:name="/ItemIngredients"/>
+        <mongo:find-objects-using-query-map config-ref="DemoMDB" collection="itemingredient" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="For Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="localDBOrderMngt" collection="itemingredient" doc:name="Mongo DB"/>
+            <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        </foreach>
+        <set-payload value="success" doc:name="Set Payload"/>
+    </flow>
+    <flow name="FoodPlan">
+        <http:listener config-ref="FoodPlanListener" path="/FoodPlan" allowedMethods="GET" doc:name="/FoodPlan"/>
+        <mongo:find-objects-using-query-map config-ref="DemoMDB" collection="foodplan" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+        <foreach collection="#[payload]" doc:name="For Each">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="Mongo DB"/>
+            <mongo:insert-object config-ref="localDBOrderMngt" collection="foodplan" doc:name="Mongo DB"/>
             <logger message="#[payload]" level="INFO" doc:name="Logger"/>
         </foreach>
         <set-payload value="success" doc:name="Set Payload"/>
