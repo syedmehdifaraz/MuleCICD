@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <http:listener-config name="menuListener" host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration"/>
+    <mongo:config name="menuMngt" username="suresh" database="ordermanagement" host="hscsrv164" doc:name="Mongo DB"/>
+    <flow name="getMenu">
+        <http:listener config-ref="menuListener" path="/getMenu" allowedMethods="GET" doc:name="/getMenu"/>
+        <set-variable variableName="locationName" value="#[message.inboundProperties.'http.query.params'.locationName]" doc:name="extract locationName" metadata:id="2cb5a042-ff7f-4698-8c8f-0b6d40991cc4"/>
+        <set-variable variableName="siteName" value="#[message.inboundProperties.'http.query.params'.siteName]" doc:name="extract siteName"/>
+        <flow-ref name="calculateday" doc:name="calculateday"/>
+        <choice doc:name="validate and invoke request">
+            <when expression="#[validator.isNotNull(flowVars.locationName) &amp;&amp; validator.isNotNull(flowVars.siteName)]">
+                <flow-ref name="getMenuForLocationSite" doc:name="getMenuForLocationSite"/>
+            </when>
+            <when expression="#[validator.isNotNull(flowVars.siteName) &amp;&amp; validator.isNull(flowVars.locationName)]">
+                <flow-ref name="getMenuForSite" doc:name="getMenuForSite"/>
+            </when>
+            <when expression="#[validator.isNotNull(flowVars.locationName) &amp;&amp; validator.isNull(flowVars.siteName)]">
+                <flow-ref name="getMenuForLocation" doc:name="getMenuForLocation"/>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="prepare response" metadata:id="da40516b-06ca-429e-83a1-e7cdde3ece18">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "Please Select SiteName along with Location and try again !"
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+        <set-payload value="#[payload]" mimeType="application/json" doc:name="send response"/>
+        <catch-exception-strategy doc:name="referring common exception handling">
+            <flow-ref name="ExceptionHandling" doc:name="ExceptionHandling"/>
+        </catch-exception-strategy>
+    </flow>
+    <sub-flow name="calculateday">
+        <set-variable variableName="dayInWeek" value="#[server.dateTime.getDayOfWeek()]" doc:name="get day in week"/>
+        <set-variable variableName="dateInMonth" value="#[server.dateTime.getDayOfMonth()]-#[server.dateTime.getMonth()]-#[server.dateTime.getYear()]" doc:name="get date in month"/>
+        <expression-component doc:name="transform to day in string"><![CDATA[if (flowVars.dayInWeek ==1) 
+	sessionVars.day = "Weekend";
+else if (flowVars.dayInWeek ==2)
+	sessionVars.day = "Monday";
+else if (flowVars.dayInWeek ==3) 
+	sessionVars.day = "Tuesday";
+else if (flowVars.dayInWeek ==4)
+	sessionVars.day = "Wednesday";
+else if (flowVars.dayInWeek ==5) 
+	sessionVars.day = "Thursday";
+else if (flowVars.dayInWeek ==6)
+	sessionVars.day = "Friday";
+else if(flowVars.dayInWeek ==7)
+	sessionVars.day = "Weekend";
+
+if (flowVars.dateInMonth.equals("04-01-2019")||flowVars.dateInMonth.equals("19-04-2019")||flowVars.dateInMonth.equals("29-04-2019")||flowVars.dateInMonth.equals("29-05-2019")||flowVars.dateInMonth.equals("12-06-2019") ||flowVars.dateInMonth.equals("21-12-2018"))
+	sessionVars.day="Specialday";
+]]></expression-component>
+    </sub-flow>
+    <sub-flow name="ExceptionHandling">
+        <dw:transform-message doc:name="set error response" metadata:id="0d853df5-7271-4014-9364-d4e9a266c9cc">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "exception occurred while processing request !"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" doc:name="send error response"/>
+    </sub-flow>
+    <sub-flow name="getConstantMenu">
+        <mongo:find-objects-using-query-map config-ref="menuMngt" collection="constantMenu" doc:name="Mongo DB"/>
+        <mongo:mongo-collection-to-json doc:name="Mongo DB"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="2f9e3ec6-9ac4-4dcb-8fd0-6a6930a077f2">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:input-variable mimeType="application/json" variableName="siteResponse"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"_id": flowVars.siteResponse."_id",
+	cateringCity: flowVars.siteResponse.cateringCity,
+	cateringLocation: flowVars.siteResponse.cateringLocation,
+	cateringSiteName: flowVars.siteResponse.cateringSiteName,
+	cateringDay: flowVars.siteResponse.cateringDay,
+	menuItems: flowVars.siteResponse.menuItems map ((menuItems , indexOfItemsForDay) -> {
+		name: menuItems.name,
+		category: menuItems.category,
+		price: menuItems.price,
+		loyalPoints: menuItems.loyalPoints
+	})
+++ (payload map ((payload01 , indexOfPayload01) -> {
+		name: payload01.name,
+		category: payload01.category,
+		price: payload01.price,
+		loyalPoints: payload01.loyalPoints
+	}))
+}]]></dw:set-payload>
+        </dw:transform-message>
+    </sub-flow>
+    <sub-flow name="getMenuForLocation">
+        <mongo:count-objects-using-query-map config-ref="menuMngt" collection="menu" doc:name="check for location">
+            <mongo:query-attributes>
+                <mongo:query-attribute key="cateringLocation">#[flowVars.locationName]</mongo:query-attribute>
+                <mongo:query-attribute key="cateringDay">#[sessionVars.day]</mongo:query-attribute>
+            </mongo:query-attributes>
+        </mongo:count-objects-using-query-map>
+        <choice doc:name="check results and process">
+            <when expression="#[payload == 0]">
+                <dw:transform-message doc:name="prepare failure response" metadata:id="bc974fd2-7363-427e-9e29-88c6a5326156">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "No Menu available on this day for this Location. Please contact Admin !"
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <mongo:find-objects-using-query-map config-ref="menuMngt" collection="menu" doc:name="find menu of location">
+                    <mongo:query-attributes>
+                        <mongo:query-attribute key="cateringDay">#[sessionVars.day]</mongo:query-attribute>
+                        <mongo:query-attribute key="cateringLocation">#[flowVars.locationName]</mongo:query-attribute>
+                    </mongo:query-attributes>
+                    <mongo:fields>
+                        <mongo:field>cateringSiteName</mongo:field>
+                    </mongo:fields>
+                </mongo:find-objects-using-query-map>
+                <mongo:mongo-collection-to-json doc:name="transform dbObject to json"/>
+                <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+                <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="JSON to Object"/>
+                <foreach collection="#[payload.cateringSiteName]" doc:name="For Each">
+                    <logger message="cateringSites for location - #[payload]" level="INFO" doc:name="Logger"/>
+                </foreach>
+                <set-variable variableName="siteResponse" value="#[payload]" mimeType="application/json" doc:name="map response to variable"/>
+                <flow-ref name="getConstantMenu" doc:name="getConstantMenu"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+    <sub-flow name="getMenuForSite">
+        <mongo:count-objects-using-query-map config-ref="menuMngt" collection="menu" doc:name="check for siteData">
+            <mongo:query-attributes>
+                <mongo:query-attribute key="cateringSiteName">#[flowVars.siteName]</mongo:query-attribute>
+                <mongo:query-attribute key="cateringDay">#[sessionVars.day]</mongo:query-attribute>
+            </mongo:query-attributes>
+        </mongo:count-objects-using-query-map>
+        <logger message="#[flowVars.siteExists]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="check results and process">
+            <when expression="#[payload == 0]">
+                <dw:transform-message doc:name="prepare failure response" metadata:id="e7a90fba-e505-471d-8873-c2e59bae4e91">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "No Menu Available on this day for this Site. Please contact Admin !"
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <mongo:find-one-object-using-query-map config-ref="menuMngt" collection="menu" doc:name="find menu for siteName">
+                    <mongo:query-attributes>
+                        <mongo:query-attribute key="cateringSiteName">#[flowVars.siteName]</mongo:query-attribute>
+                        <mongo:query-attribute key="cateringDay">#[sessionVars.day]</mongo:query-attribute>
+                    </mongo:query-attributes>
+                </mongo:find-one-object-using-query-map>
+                <mongo:dbobject-to-json doc:name="transform dbObject to json"/>
+                <set-variable variableName="siteResponse" value="#[payload]" mimeType="application/json" doc:name="map response to variable"/>
+                <flow-ref name="getConstantMenu" doc:name="getConstantMenu"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+    <sub-flow name="getMenuForLocationSite">
+        <mongo:count-objects-using-query-map config-ref="menuMngt" collection="menu" doc:name="check for location and site combination">
+            <mongo:query-attributes>
+                <mongo:query-attribute key="cateringLocation">#[flowVars.locationName]</mongo:query-attribute>
+                <mongo:query-attribute key="cateringSiteName">#[flowVars.siteName]</mongo:query-attribute>
+                <mongo:query-attribute key="cateringDay">#[sessionVars.day]</mongo:query-attribute>
+            </mongo:query-attributes>
+        </mongo:count-objects-using-query-map>
+        <choice doc:name="check results and process">
+            <when expression="#[payload == 0]">
+                <dw:transform-message doc:name="prepare failure response" metadata:id="6025b1d3-b54d-427f-bb3e-ba339437798a">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "failure",
+	statusMessage: "No Results found for Location and Site Combination !"
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <mongo:find-one-object-using-query-map config-ref="menuMngt" collection="menu" doc:name="find Objects based on Location and Site">
+                    <mongo:query-attributes>
+                        <mongo:query-attribute key="cateringLocation">#[flowVars.locationName]</mongo:query-attribute>
+                        <mongo:query-attribute key="cateringSiteName">#[flowVars.siteName]</mongo:query-attribute>
+                        <mongo:query-attribute key="cateringDay">#[sessionVars.day]</mongo:query-attribute>
+                    </mongo:query-attributes>
+                </mongo:find-one-object-using-query-map>
+                <mongo:dbobject-to-json mimeType="application/json" doc:name="transform dbObject  to json"/>
+                <set-variable variableName="siteResponse" value="#[payload]" doc:name="map response to variable" mimeType="application/json"/>
+                <flow-ref name="getConstantMenu" doc:name="getConstantMenu"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+    <flow name="updateConstantMenu">
+        <http:listener config-ref="menuListener" path="/updateConstantMenu" allowedMethods="POST" doc:name="updateConstantMenu"/>
+        <object-to-string-transformer mimeType="application/json" doc:name="transform input Object to String"/>
+        <json:json-to-object-transformer returnClass="java.lang.Object" doc:name="transform JSON to Object"/>
+        <foreach collection="#[payload.menuItems]" doc:name="for each document">
+            <json:object-to-json-transformer mimeType="application/json" doc:name="transform Object to JSON"/>
+            <mongo:json-to-dbobject doc:name="transform json to dbobject"/>
+            <mongo:update-objects-using-query-map config-ref="menuMngt" collection="constantMenu" element-ref="#[payload]" multi="false" upsert="true" doc:name="update database">
+                <mongo:query-attributes>
+                    <mongo:query-attribute key="name">#[payload.name]</mongo:query-attribute>
+                </mongo:query-attributes>
+            </mongo:update-objects-using-query-map>
+        </foreach>
+        <dw:transform-message doc:name="prepare success response" metadata:id="05f5ecd5-9614-4ae3-814b-a70fc47e661c">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	status: "success",
+	statusMessage: "Records Updated Successfully !!"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" mimeType="application/json" doc:name="send response"/>
+        <catch-exception-strategy doc:name="Exception Handling">
+            <flow-ref name="ExceptionHandling" doc:name="ExceptionHandling"/>
+        </catch-exception-strategy>
+    </flow>
+</mule>
